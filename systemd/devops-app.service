@@ -1,0 +1,13 @@
+[Unit]
+Description=DevOps Challenge Web Application
+After=network.target
+
+[Service]
+User=quynhmy
+WorkingDirectory=/opt/devops-app
+EnvironmentFile=/etc/devops-app.env
+ExecStart=/opt/devops-app/venv/bin/python app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
