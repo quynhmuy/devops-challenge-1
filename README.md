@@ -10,13 +10,13 @@
 | | Nguyễn Thị Quỳnh Mỹ |
 | Môi trường | WSL2 Ubuntu (đã bật systemd) trên Windows |
 | Repo | https://github.com/quynhmuy/devops-challenge-1 |
-| Video demo | [dán link YouTube Unlisted hoặc cloud drive vào đây] |
+| Video demo |  |
 
-**Mục tiêu:** triển khai một ứng dụng web Flask nhỏ lên Ubuntu, rồi cải tiến quy trình từng bước:
+**Mục tiêu:** Triển khai một ứng dụng web Flask trên Ubuntu và từng bước cải tiến quy trình triển khai:
 
 > Thủ công → Chạy bằng systemd → Nginx reverse proxy → Tách cấu hình → Script tự động → Health check
 
-Kết quả là quy trình triển khai **lặp lại được, quản lý được và chẩn đoán được lỗi**.
+Kết quả hướng đến là quy trình triển khai nhất quán, có thể lặp lại, dễ quản lý và thuận tiện trong việc chẩn đoán sự cố.
 
 ---
 
@@ -32,15 +32,15 @@ GitHub --git pull--> /opt/devops-app <-- scripts/deploy.sh
 
 ![Sơ đồ kiến trúc](docs/architecture.png)
 
-- **Nginx** nhận request ở cổng 80 và chuyển tiếp vào Flask.
-- **Flask** chỉ nghe ở `127.0.0.1:5000`, nên bên ngoài chỉ truy cập được qua Nginx.
-- **systemd** giữ Flask luôn chạy, tự khởi động lại khi lỗi và tự chạy khi bật máy.
-- **Cấu hình** nằm ở `/etc/devops-app.env`, tách khỏi mã nguồn.
+- **Nginx** Nhận request tại cổng 80 và chuyển tiếp đến ứng dụng Flask.
+- **Flask** Lắng nghe tại 127.0.0.1:5000; người dùng truy cập thông qua Nginx.
+- **systemd** Quản lý ứng dụng, hỗ trợ tự khởi động khi hệ thống khởi động và khởi động lại khi gặp lỗi theo cấu hình.
+- **Cấu hình** Lưu tại /etc/devops-app.env, tách biệt với mã nguồn.
 
-| Thư mục | Vai trò | Làm gì ở đó |
+| Thư mục | Vai trò | Chức  |
 |---|---|---|
-| `~/devops-challenge-1` | Bản **phát triển** | Sửa code, commit, push |
-| `/opt/devops-app` | Bản **triển khai** | Chỉ `git pull` và chạy (qua `deploy.sh`) |
+| `~/devops-challenge-1` | Bản **phát triển** | Chỉnh sửa code, commit và push lên GitHub |
+| `/opt/devops-app` | Bản **triển khai** | Lưu mã nguồn triển khai và cập nhật thông qua deploy.sh |
 
 ---
 
@@ -88,9 +88,11 @@ python app.py
 curl http://127.0.0.1:5000
 ```
 
-**Phần phản ánh:** các bước thủ công gồm clone, tạo venv, kích hoạt venv, cài thư viện, chạy app, kiểm tra. Gần như tất cả đều tự động hóa được; chỉ quyết định "khi nào deploy" là do con người.
+**Phần phản ánh:** Quy trình thủ công gồm tải mã nguồn, tạo và kích hoạt môi trường ảo, cài đặt thư viện, chạy ứng dụng và kiểm tra phản hồi. Hầu hết các bước này đều có thể tự động hóa bằng script; thời điểm triển khai vẫn do người thực hiện quyết định.
 
-**Bước 4: Tạo file biến môi trường** (nằm ngoài Git)
+**Bước 4: Tạo file biến môi trường** 
+File cấu hình được đặt bên ngoài Git để tách biệt cấu hình với mã nguồn.
+
 ```bash
 sudo tee /etc/devops-app.env > /dev/null <<'EOF'
 APP_NAME=DevOps Challenge 1
@@ -101,7 +103,7 @@ EOF
 
 **Bước 5: Cài service systemd**
 
-> Dòng `User=` trong `systemd/devops-app.service` phải đổi thành **username Linux của máy bạn** (kiểm tra bằng `whoami`).
+> Dòng `User=` trong `systemd/devops-app.service` phải được thay bằng **username Linux của máy triển khai** (kiểm tra bằng `whoami`).
 
 ```bash
 sudo cp systemd/devops-app.service /etc/systemd/system/
@@ -125,7 +127,7 @@ sudo systemctl restart nginx
 | Mục đích | Lệnh |
 |---|---|
 | Chạy trực tiếp (phát triển) | `python app.py` |
-| Chạy bằng service (production) | `sudo systemctl start devops-app` |
+| Chạy bằng service | `sudo systemctl start devops-app` |
 | Truy cập qua Nginx | `curl http://localhost` |
 
 ---
@@ -136,7 +138,7 @@ sudo systemctl restart nginx
 /opt/devops-app/scripts/deploy.sh
 ```
 
-Script chạy được **từ bất kỳ thư mục nào**, gồm 5 bước:
+Script có thể chạy từ bất kỳ thư mục làm việc nào và thực hiện 5 bước:
 
 | Bước | Việc làm |
 |---|---|
@@ -146,7 +148,7 @@ Script chạy được **từ bất kỳ thư mục nào**, gồm 5 bước:
 | 4 | Kiểm tra service đang `active` |
 | 5 | Health check `http://localhost/health` (thử lại tối đa 5 lần) |
 
-**Quy trình đầy đủ:** sửa code ở `~/devops-challenge-1` → `git add` → `git commit` → `git push` → chạy `deploy.sh` → `curl http://localhost` để thấy thay đổi.
+**Quy trình đầy đủ:**  Chỉnh sửa code tại `~/devops-challenge-1` → `git add` → `git commit` → `git push` → chạy `deploy.sh` → `curl http://localhost` để thấy thay đổi.
 
 ---
 
@@ -161,7 +163,9 @@ Endpoint `GET /health` trả về:
 curl --fail http://localhost/health
 ```
 
-**Health check thất bại = deploy thất bại.** Khi kiểm tra không đạt, `deploy.sh` in `Deployment FAILED` và thoát với mã **1**. Đã kiểm chứng bằng cách tạm đổi URL sang `/healthx`: script thử 5 lần, báo thất bại và `echo $?` ra `1`.
+**Health check thất bại đồng nghĩa với triển khai thất bại**. Nếu kiểm tra không thành công sau số lần thử lại được quy định, deploy.sh hiển thị Deployment FAILED và kết thúc với mã thoát 1.
+
+Nhóm đã kiểm chứng cơ chế này bằng cách tạm đổi URL kiểm tra thành /healthx. Script thử lại 5 lần, thông báo thất bại và trả về mã thoát 1, có thể xác nhận bằng lệnh echo $?.
 
 ---
 
@@ -176,22 +180,22 @@ curl --fail http://localhost/health
 | Xem log | `journalctl -u devops-app -n 30 --no-pager` |
 
 **Vì sao dùng service thay vì chạy trong terminal?**
-- Không phụ thuộc cửa sổ terminal, đóng terminal app vẫn chạy.
-- Tự khởi động lại khi lỗi (`Restart=always`).
+- Không phụ thuộc vào cửa sổ terminal đang mở.
+- Hỗ trợ tự khởi động lại khi lỗi theo cấu hình (`Restart=always`).
 - Tự chạy khi bật máy (`enable`).
 - Có log tập trung (`journalctl`).
 - Quản lý thống nhất bằng `systemctl`.
 
 **Vì sao tách cấu hình khỏi mã nguồn?**
-- Mỗi môi trường (dev, production) cần giá trị khác nhau mà không phải sửa code.
-- Mật khẩu và thông tin bí mật không bị lộ lên Git.
-- Đổi cấu hình không cần commit hay build lại.
+- Cho phép sử dụng giá trị khác nhau giữa môi trường development và production.
+- Hạn chế đưa thông tin bảo mật và cá nhân vào Git.
+- Có thể thay đổi cấu hình mà không cần chỉnh sửa hoặc commit lại mã nguồn.
 
 ---
 
 ## 9. Git workflow
 
-Nhánh tính năng: `feature/ngoc-lam-my`. Đã sửa `app.py`, commit và merge vào `main`.
+Nhánh tính năng: `feature/ngoc-lam-my`. Nhóm đã chỉnh sửa `app.py`, commit và merge thay đổi vào `main`.
 
 ```
 Working directory --git add--> Staging area --git commit--> Local repository --git push--> GitHub
@@ -206,7 +210,7 @@ Working directory --git add--> Staging area --git commit--> Local repository --g
 |---|---|
 | Triệu chứng | `curl http://localhost` trả về 502 |
 | Chẩn đoán | `systemctl status devops-app` (inactive); `journalctl -u devops-app`; `sudo tail /var/log/nginx/error.log` (Connection refused tới 127.0.0.1:5000); `ss -tlnp \| grep 5000` (trống) |
-| Nguyên nhân | Service Flask không chạy, Nginx không có backend |
+| Nguyên nhân | Service Flask không chạy, khiến Nginx không thể kết nối đến backend tại 127.0.0.1:5000. |
 | Cách sửa | `sudo systemctl start devops-app` |
 
 ### Sự cố B: Port 5000 chạy nhưng port 80 lỗi
@@ -214,8 +218,9 @@ Working directory --git add--> Staging area --git commit--> Local repository --g
 |---|---|
 | Triệu chứng | `curl 127.0.0.1:5000` được, `curl localhost` bị từ chối kết nối |
 | Chẩn đoán | `systemctl status nginx`; `sudo nginx -t`; `ss -tlnp \| grep -E ':80\|:5000'` |
-| Nguyên nhân 1 | Nginx bị dừng (`nginx -t` vẫn OK). Sửa: `sudo systemctl start nginx` |
-| Nguyên nhân 2 | Config sai: `nginx -t` báo `invalid number of arguments in "proxy_pass" directive ... devops-app:7` (thiếu dấu `;`), `restart` thất bại. Sửa: chép lại config đúng từ repo, chạy `nginx -t`, rồi restart |
+| Nguyên nhân 1 | Nginx bị dừng dù cấu hình vẫn hợp lệ. Cách sửa: `sudo systemctl start nginx`. |
+| Nguyên nhân 2 | Cấu hình sai cú pháp, thiếu dấu ; trong chỉ thị `proxy_pass`, khiến Nginx không thể restart |
+| Cách sửa | Khôi phục cấu hình đúng từ repository, chạy ` sudo nginx -t`, sau đó restart Nginx. |
 | Bài học | **Luôn chạy `sudo nginx -t` trước khi restart** |
 
 ### Sự cố C: Ứng dụng không tự chạy sau khi reboot
