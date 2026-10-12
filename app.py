@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return f"{APP_NAME} ({APP_ENV}) - Team: Ngoc Lam My - v2"
+    return f"{APP_NAME} ({APP_ENV}) - Team: Ngoc Lam My - v3"
 
 @app.route("/health")
 def health():
